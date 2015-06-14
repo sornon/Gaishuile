@@ -173,23 +173,23 @@ var Start = React.createClass({
     },
     getInitialState: function(){
         return {
-            codeMsg:'',
-            codeErr:'',
+            smsDesc:'',
+            smsErr:'',
             phoneErr:''
         }
     },
     render: function() {
         var styles = this.getStyles()
-        var codeActions = [
+        var smsActions = [
             <FlatButton
                 label={lang.btn[2]}
                 secondary={true}
-                onTouchTap={this._handleCodeDiaClose}
+                onTouchTap={this._handleSmsDiaClose}
                 style={styles.btn} />,
             <FlatButton
                 label={lang.btn[3]}
                 primary={true}
-                onTouchTap={this._handlecodeDiaSubmit}
+                onTouchTap={this._handleSmsDiaSubmit}
                 style={styles.btn} />
         ]
         return (
@@ -241,16 +241,16 @@ var Start = React.createClass({
                                         <RaisedButton label={lang.btn[1]} onClick={this._handleQuickLogin} containerStyle={styles.btn} primary={true} />      
                                         <Dialog
                                             contentStyle={styles.dialog}
-                                            ref="codeCheck"
-                                            title={this.state.codeMsg}
-                                            actions={codeActions}>
+                                            ref="smsCheck"
+                                            title={this.state.smsDesc}
+                                            actions={smsActions}>
                                             <TextField
-                                                ref="phoneCode"
-                                                errorText={this.state.codeErr}
+                                                ref="sms"
+                                                errorText={this.state.smsErr}
                                                 hintText={lang.login[8]}
                                                 floatingLabelText={lang.login[9]}
                                                 inputStyle={styles.inputin} 
-                                                onChange={this._handleCodeChange} />
+                                                onChange={this._handleSmsChange} />
                                         </Dialog>
                                     </div> 
                                 </Tab> 
@@ -311,9 +311,9 @@ var Start = React.createClass({
                 that.nextSend(data.time)
             }
             that.setState({
-                codeMsg: data.msg
+                smsDesc: data.msg
             })
-            that.codeCheckShow()
+            that.smsCheckShow()
             console.log(data)
         })
     },
@@ -325,7 +325,7 @@ var Start = React.createClass({
             time --
             if(time > 0){
                 this.setState({
-                    codeMsg: lang.login[11] +(time)+ lang.login[12]
+                    smsDesc: lang.login[11] +(time)+ lang.login[12]
                 })
                 return this.nextSend(time)
             }else{
@@ -333,17 +333,37 @@ var Start = React.createClass({
             }
         }.bind(this), 1000);
     },
-    codeCheckShow: function(){
-        this.refs.phoneCode.setValue('')
-        this.setState({codeErr: ''})
-        this.refs.codeCheck.show()
+    smsCheckShow: function(){
+        this.refs.sms.setValue('')
+        this.setState({smsErr: ''})
+        this.refs.smsCheck.show()
     },
-    _handleCodeDiaClose: function(){
+    _handleSmsDiaClose: function(){
         clearTimeout(this.timer)
-        this.refs.codeCheck.dismiss()
+        this.refs.smsCheck.dismiss()
     },
-    _handlecodeDiaSubmit: function(){
-        this._handleCodeCheck()
+    _handleSmsDiaSubmit: function(){
+        if(this._handleSmsCheck()){
+            this._handleSendSms()
+        }
+    },
+    _handleSendSms: function(){
+        var that = this
+        request({
+            url: 'http://127.0.0.1:8085/login/?callback=?',
+            type: 'jsonp',
+            data: {
+                phone: this.refs.newPhone.getValue(),
+                sms: this.refs.sms.getValue(),
+                mode: 'checkSms'
+            }
+        })
+        .then(function(data){
+            if(data.state == 3006){
+                that.setState({smsErr: data.msg})
+            }
+            console.log(data)
+        })
     },
     _handlePhoneCheck: function(){
         var value = this.refs.newPhone.getValue()
@@ -366,19 +386,19 @@ var Start = React.createClass({
         if(this.phoneBlurErr)
             this._handlePhoneCheck()
     },
-    _handleCodeCheck: function(){
-        var value = this.refs.phoneCode.getValue()
+    _handleSmsCheck: function(){
+        var value = this.refs.sms.getValue()
         var isNumeric = !isNaN(parseFloat(value)) && isFinite(value)
         if(isNumeric && value.length == 4){
-            this.setState({codeErr: ''})
+            this.setState({smsErr: ''})
             return true
         }else{
-            this.setState({codeErr: lang.login[10]})
+            this.setState({smsErr: lang.login[10]})
             return false
         }
     },
-    _handleCodeChange: function(){
-            this._handleCodeCheck()
+    _handleSmsChange: function(){
+            this._handleSmsCheck()
     }
 
 })
