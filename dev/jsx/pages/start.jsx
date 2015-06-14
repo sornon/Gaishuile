@@ -94,7 +94,8 @@ var Start = React.createClass({
             tab: {
                 textShadow: 'none',
                 fontFamily: 'siyuanjixi',
-                fontSize: '2em'
+                fontSize: '2em',
+                lineHeight: '2'
             },
             tabin: {
                 textShadow: 'none',
@@ -107,7 +108,8 @@ var Start = React.createClass({
                 marginTop: '-15px'
             },
             inputin: {
-                fontFamily: 'Roboto, sans-serif'
+                fontFamily: 'Roboto, sans-serif',
+                color: '#333'
             },
             btn: {
                 fontFamily: 'siyuan'
@@ -172,7 +174,8 @@ var Start = React.createClass({
     getInitialState: function(){
         return {
             codeMsg:'',
-            codeErr:''
+            codeErr:'',
+            phoneErr:''
         }
     },
     render: function() {
@@ -226,9 +229,12 @@ var Start = React.createClass({
                                     <div style={styles.tabin}>
                                         <TextField
                                             ref="newPhone"
+                                            errorText={this.state.phoneErr}
                                             hintText={lang.login[6]}
                                             floatingLabelText={lang.login[7]}
-                                            inputStyle={styles.inputin} />
+                                            inputStyle={styles.inputin} 
+                                            onChange={this._handlePhoneChange}
+                                            onBlur={this._handlePhoneBlur} />
 
                                             <br /><br />
 
@@ -244,7 +250,7 @@ var Start = React.createClass({
                                                 hintText={lang.login[8]}
                                                 floatingLabelText={lang.login[9]}
                                                 inputStyle={styles.inputin} 
-                                                onChange={this._handleCodeCheck} />
+                                                onChange={this._handleCodeChange} />
                                         </Dialog>
                                     </div> 
                                 </Tab> 
@@ -290,6 +296,7 @@ var Start = React.createClass({
     },
     _handleQuickLogin: function(){
         var that = this
+        if(!this._handlePhoneCheck()) return
         request({
             url:'http://127.0.0.1:8085/login/?callback=?',
             type: 'jsonp',
@@ -300,25 +307,78 @@ var Start = React.createClass({
 
         })
         .then(function(data){
+            if(data.state == 3001){
+                that.nextSend(data.time)
+            }
             that.setState({
                 codeMsg: data.msg
             })
-            that.refs.codeCheck.show()
+            that.codeCheckShow()
             console.log(data)
         })
     },
+    timer: null,
+    phoneBlurErr: false,
+    nextSend: function(time){
+        clearTimeout(this.timer)
+        this.timer = setTimeout(function(){
+            time --
+            if(time > 0){
+                this.setState({
+                    codeMsg: lang.login[11] +(time)+ lang.login[12]
+                })
+                return this.nextSend(time)
+            }else{
+                return this._handleQuickLogin()
+            }
+        }.bind(this), 1000);
+    },
+    codeCheckShow: function(){
+        this.refs.phoneCode.setValue('')
+        this.setState({codeErr: ''})
+        this.refs.codeCheck.show()
+    },
     _handleCodeDiaClose: function(){
+        clearTimeout(this.timer)
         this.refs.codeCheck.dismiss()
     },
     _handlecodeDiaSubmit: function(){
         this._handleCodeCheck()
     },
+    _handlePhoneCheck: function(){
+        var value = this.refs.newPhone.getValue()
+        if(/^1[3|4|5|7|8][0-9]{9}$/.test(value)){
+            this.setState({
+                phoneErr: ''
+            })
+            return true
+        }else{
+            this.setState({
+                phoneErr: value.length ? lang.login[13] : ''
+            })
+            return false
+        }
+    },
+    _handlePhoneBlur: function(){
+        this.phoneBlurErr = !this._handlePhoneCheck()
+    },
+    _handlePhoneChange: function(){
+        if(this.phoneBlurErr)
+            this._handlePhoneCheck()
+    },
     _handleCodeCheck: function(){
         var value = this.refs.phoneCode.getValue()
         var isNumeric = !isNaN(parseFloat(value)) && isFinite(value)
-        this.setState({
-            codeErr: (isNumeric && value.length == 4) ? '' : lang.login[10]
-        })
+        if(isNumeric && value.length == 4){
+            this.setState({codeErr: ''})
+            return true
+        }else{
+            this.setState({codeErr: lang.login[10]})
+            return false
+        }
+    },
+    _handleCodeChange: function(){
+            this._handleCodeCheck()
     }
 
 })
