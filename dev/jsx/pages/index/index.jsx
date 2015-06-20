@@ -4,7 +4,6 @@
         AppRoutes = require('./router.jsx'),
         injectTapEventPlugin = require("react-tap-event-plugin");
 
-    window.React = React;
     injectTapEventPlugin();
     Router
         .create({

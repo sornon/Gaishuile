@@ -4,11 +4,11 @@
         AppRoutes = require('./router.jsx'),
         injectTapEventPlugin = require("react-tap-event-plugin");
 
-    window.React = React;
     injectTapEventPlugin();
     Router
         .create({
             routes: AppRoutes,
+            location: Router.HistoryLocation,
             scrollBehavior: Router.ScrollToTopBehavior
         })
         .run(function(Handler) {
