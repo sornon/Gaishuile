@@ -30,7 +30,8 @@ gulp.task('browserify', function(callback) {
       // Enable source maps!
       debug: config.debug
     }).transform(babelify,{stage:1})
-
+      // if(bundleConfig.outputName !== 'react.js')
+      //   bundler.ignore('react')
     var bundle = function() {
       // Log when bundling starts
       bundleLogger.start(bundleConfig.outputName);

@@ -6,8 +6,8 @@ var mui = require('material-ui')
 var lang = require('../lang.jsx')
 var Colors = mui.Styles.Colors
 //组件
-var FullWidthSection = require('../components/full-width-section.jsx')
-var {TextField, Tabs, Tab, RaisedButton, Paper, Dialog, FlatButton} = mui
+var FullWidthSection = require('../../components/full-width-section.jsx')
+var {TextField, Tabs, Tab, RaisedButton, Paper, Dialog, FlatButton, LinearProgress} = mui
 
 
 var Start = React.createClass({
@@ -21,7 +21,6 @@ var Start = React.createClass({
                 overflow: 'hidden'
             },
             middle: {
-                fontFamily: 'siyuanjixi',
                 backgroundColor: Colors.lightBlue50
             },
             contain: {
@@ -71,7 +70,6 @@ var Start = React.createClass({
                 fontSize: '1.5em',
             },
             box: {
-                fontFamily: 'siyuanjixi',
                 width: '500px',
                 position: 'absolute',
                 left: '50%',
@@ -93,7 +91,6 @@ var Start = React.createClass({
             },
             tab: {
                 textShadow: 'none',
-                fontFamily: 'siyuanjixi',
                 fontSize: '2em',
                 lineHeight: '2'
             },
@@ -167,7 +164,6 @@ var Start = React.createClass({
             dialog:{
                 maxWidth:'75%',
                 width: '360px',
-                fontFamily: 'siyuanjixi'
             }
         }
     },
@@ -175,7 +171,8 @@ var Start = React.createClass({
         return {
             smsDesc:'',
             smsErr:'',
-            phoneErr:''
+            phoneErr:'',
+            newPhoneLoad: false,
         }
     },
     render: function() {
@@ -185,12 +182,12 @@ var Start = React.createClass({
                 label={lang.btn[2]}
                 secondary={true}
                 onTouchTap={this._handleSmsDiaClose}
-                style={styles.btn} />,
+                className="btn" />,
             <FlatButton
                 label={lang.btn[3]}
                 primary={true}
                 onTouchTap={this._handleSmsDiaSubmit}
-                style={styles.btn} />
+                className="btn" />
         ]
         return (
             <div>
@@ -222,10 +219,16 @@ var Start = React.createClass({
 
                                             <br /><br />
 
-                                        <RaisedButton label={lang.btn[0]} containerStyle={styles.btn} primary={true} />
+                                        <RaisedButton label={lang.btn[0]} className="btn" primary={true} />
                                     </div> 
                                 </Tab> 
-                                <Tab label={lang.login[1]} style={styles.tab}> 
+                                <Tab label={lang.login[1]} style={styles.tab}>
+                                    {
+                                        (function(){
+                                            if(this.state.newPhoneLoad)
+                                                return (<LinearProgress mode="indeterminate" style={{position:'absolute'}} />)
+                                        }.bind(this))()
+                                    }
                                     <div style={styles.tabin}>
                                         <TextField
                                             ref="newPhone"
@@ -238,7 +241,7 @@ var Start = React.createClass({
 
                                             <br /><br />
 
-                                        <RaisedButton label={lang.btn[1]} onClick={this._handleQuickLogin} containerStyle={styles.btn} primary={true} />      
+                                        <RaisedButton label={lang.btn[1]} onClick={this._handleQuickLogin} className="btn" primary={true} />      
                                         <Dialog
                                             contentStyle={styles.dialog}
                                             ref="smsCheck"
@@ -294,11 +297,18 @@ var Start = React.createClass({
             </div>
         )
     },
+    timer: null,
+    phoneBlurErr: false,
+    baseUrl:'http://127.0.0.1:8085',
+    // baseUrl:'http://api.gaishuile.com',
     _handleQuickLogin: function(){
         var that = this
         if(!this._handlePhoneCheck()) return
+        this.setState({
+            newPhoneLoad: true
+        })
         request({
-            url:'http://127.0.0.1:8085/login/?callback=?',
+            url:that.baseUrl+'/login/?callback=?',
             type: 'jsonp',
             data: {
                 phone: this.refs.newPhone.getValue(),
@@ -311,14 +321,13 @@ var Start = React.createClass({
                 that.nextSend(data.time)
             }
             that.setState({
-                smsDesc: data.msg
+                smsDesc: data.msg,
+                newPhoneLoad: false
             })
             that.smsCheckShow()
             console.log(data)
         })
     },
-    timer: null,
-    phoneBlurErr: false,
     nextSend: function(time){
         clearTimeout(this.timer)
         this.timer = setTimeout(function(){
@@ -344,13 +353,14 @@ var Start = React.createClass({
     },
     _handleSmsDiaSubmit: function(){
         if(this._handleSmsCheck()){
+            clearTimeout(this.timer)
             this._handleSendSms()
         }
     },
     _handleSendSms: function(){
         var that = this
         request({
-            url: 'http://127.0.0.1:8085/login/?callback=?',
+            url: that.baseUrl + '/login/?callback=?',
             type: 'jsonp',
             data: {
                 phone: this.refs.newPhone.getValue(),
@@ -360,7 +370,10 @@ var Start = React.createClass({
         })
         .then(function(data){
             if(data.state == 3006){
+                that.setState({smsDesc: '短信验证码不正确'})
                 that.setState({smsErr: data.msg})
+            }else if(data.state == 2000){
+                that.setState({smsDesc: '登录成功'})
             }
             console.log(data)
         })

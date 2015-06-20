@@ -8,20 +8,23 @@ var autoprefixer = require('gulp-autoprefixer');
 var minifyCSS = require('gulp-minify-css');
 var uglify = require('gulp-uglify');
 var buffer = require('vinyl-buffer');
-
 gulp.task('jsx-release', function() {
-    var bundleConfig = config.browserify.bundleConfigs[0];
-    browserify({
-        entries: bundleConfig.entries,
-        extensions: config.browserify.extensions,
-        debug: false
+    var bundleList = config.browserify.bundleConfigs;
+    bundleList.forEach(function(bundleConfig) {
+        var b = browserify({
+            entries: bundleConfig.entries,
+            extensions: config.browserify.extensions,
+            debug: false
+        })
+        // if(bundleConfig.outputName !== 'react.js')
+        //     b.exclude('react')
+        b.transform(babelify,{stage:1})
+        .bundle()
+        .pipe(source(bundleConfig.outputName))
+        .pipe(buffer())
+        .pipe(uglify())
+        .pipe(gulp.dest(bundleConfig.dest))
     })
-    .transform(babelify,{stage:1})
-    .bundle()
-    .pipe(source(bundleConfig.outputName))
-    .pipe(buffer())
-    .pipe(uglify())
-    .pipe(gulp.dest(bundleConfig.dest))
 });
 
 gulp.task('less-release', function() {
