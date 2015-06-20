@@ -24,10 +24,10 @@ module.exports = {
   browserify: {
     debug: true,
     bundleConfigs: [{
-    //   entries: src + '/jsx/pages/index/index.jsx',
-    //   dest: dest + '/js',
-    //   outputName: 'index.js'
-    // // },{
+      entries: src + '/jsx/pages/index/index.jsx',
+      dest: dest + '/js',
+      outputName: 'index.js'
+    },{
     // //   entries: './node_modules/react/react.js',
     // //   dest: dest + '/js',
     // //   outputName: 'react.js'
